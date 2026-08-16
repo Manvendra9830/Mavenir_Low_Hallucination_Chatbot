@@ -42,12 +42,7 @@ export default function App() {
   const [corpusStatus, setCorpusStatus] = useState(null)
   const [health, setHealth] = useState(null)
   
-  // Add Document state
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newSpec, setNewSpec] = useState('')
-  const [uploadFile, setUploadFile] = useState(null)
-  const [addingDoc, setAddingDoc] = useState(false)
-  const [addError, setAddError] = useState(null)
+  // Removed upload state
   
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
@@ -143,51 +138,12 @@ export default function App() {
     }
   }
 
-  const handleAddDocument = async () => {
-    if (!newSpec || !uploadFile) {
-      setAddError('Specification and file are required')
-      return
-    }
-    setAddingDoc(true)
-    setAddError(null)
-    try {
-      const formData = new FormData()
-      formData.append('release', '18')
-      formData.append('specification', newSpec)
-      formData.append('file', uploadFile)
-
-      const res = await fetch(`${API_BASE}/corpus/upload`, {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || 'Failed to add document')
-      
-      // Refresh corpus
-      refreshCorpus()
-      
-      // Auto-select the newly added spec
-      setSelectedSpecs(prev => {
-        if (!prev.includes(newSpec)) return [...prev, newSpec]
-        return prev
-      })
-      
-      setShowAddModal(false)
-      setNewSpec('')
-      setUploadFile(null)
-    } catch (err) {
-      setAddError(err.message)
-    } finally {
-      setAddingDoc(false)
-    }
-  }
 
   const handleRemoveDocument = async (specification) => {
     setSelectedSpecs(prev => prev.filter(s => s !== specification))
   }
 
   const totalDocs = corpusStatus?.total_documents || 0
-  const atCapacity = totalDocs >= MAX_DOCUMENTS
 
   return (
     <div className="app-layout">
@@ -251,15 +207,7 @@ export default function App() {
             ))}
           </div>
           
-          <div className="doc-counter">{totalDocs} / {MAX_DOCUMENTS} documents</div>
-          
-          {atCapacity ? (
-            <div className="doc-limit-msg">Maximum {MAX_DOCUMENTS} documents reached.</div>
-          ) : (
-            <button className="add-doc-btn" onClick={() => setShowAddModal(true)}>
-              + Add 3GPP Document
-            </button>
-          )}
+          <div className="doc-counter">Read-Only Corpus ({totalDocs} documents)</div>
         </div>
 
         {corpusStatus && (
@@ -462,52 +410,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* ── Add Document Modal ── */}
-      {showAddModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <h3>Add 3GPP Document</h3>
-            
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Release</label>
-                <select disabled defaultValue="18" className="form-select">
-                  <option value="18">Release 18</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Specification (e.g. TS 29.500)</label>
-                <input 
-                  type="text" 
-                  placeholder="TS XX.YYY" 
-                  className="form-input" 
-                  value={newSpec}
-                  onChange={e => setNewSpec(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="form-group">
-                <label>Document (.zip, .pdf, .docx)</label>
-                <input 
-                  type="file" 
-                  accept=".zip,.pdf,.docx" 
-                  className="form-input" 
-                  onChange={e => setUploadFile(e.target.files[0])}
-                />
-              </div>
-              {addError && <div className="modal-error">{addError}</div>}
-              {addingDoc && <div className="modal-loading">Extracting, and indexing document... This may take a minute.</div>}
-            </div>
 
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => { setShowAddModal(false); setAddError(null); setNewSpec(''); setUploadFile(null) }} disabled={addingDoc}>Cancel</button>
-              <button className="btn-primary" onClick={handleAddDocument} disabled={addingDoc || !newSpec.trim() || !uploadFile}>
-                {addingDoc ? 'Adding...' : 'Add Document'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

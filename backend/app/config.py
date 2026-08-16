@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # --- Generation ---
     temperature: float = Field(default=0.1, description="LLM sampling temperature")
-    max_output_tokens: int = Field(default=8192, description="Max LLM output tokens")
+    max_output_tokens: int = Field(default=1024, description="Max LLM output tokens")
 
     # --- Storage (relative to PROJECT_ROOT) ---
     vector_db_path: str = Field(default="storage/vector", description="ChromaDB persistent path")

@@ -28,7 +28,9 @@ class GeminiClient:
             return None
             
         prompt = build_prompt(question, evidence)
-        
+        if self.settings.debug_mode:
+            logger.info(f"[DEBUG] Gemini request: max_output_tokens={self.settings.max_output_tokens}")
+            
         # 1 retry for transient errors; rate limits fail immediately to allow Groq failover
         for attempt in range(2):
             try:

@@ -36,7 +36,9 @@ class GroqClient:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
         ]
-        
+        if self.settings.debug_mode:
+            logger.info(f"[DEBUG] Groq request: max_tokens={self.settings.max_output_tokens}")
+
         # 1 retry for transient errors
         for attempt in range(2):
             try:

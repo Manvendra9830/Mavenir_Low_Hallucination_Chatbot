@@ -2,6 +2,7 @@
 TeleRAG — API Routes
 """
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from typing import List, Optional
 from pydantic import BaseModel
 import shutil
 import pathlib
@@ -64,51 +65,7 @@ async def add_document(request: AddDocumentRequest):
         raise HTTPException(status_code=400, detail=result.get("message"))
     return result
 
-@router.post("/corpus/upload")
-async def upload_document(
-    release: str = Form(...),
-    specification: str = Form(...),
-    file: UploadFile = File(...)
-):
-    """Upload and ingest a local document."""
-    from backend.app.storage.metadata_store import MetadataStore
-    meta_store = MetadataStore.get_instance()
-    
-    # Enforce 10-document maximum
-    current_count = meta_store.get_document_count()
-    if current_count >= MAX_DOCUMENTS:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Maximum corpus capacity of {MAX_DOCUMENTS} documents reached."
-        )
-    
-    # Save the uploaded file to a temporary location
-    temp_dir = pathlib.Path(get_settings().get_data_path()) / "temp_uploads"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_file_path = temp_dir / file.filename
-    
-    try:
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        from backend.app.services.corpus_ingestion_service import CorpusIngestionService
-        service = CorpusIngestionService()
-        
-        result = service.ingest_uploaded_file(
-            local_path=str(temp_file_path),
-            original_filename=file.filename,
-            release=release,
-            spec_number=specification
-        )
-        
-        if result.get("status") == "error":
-            raise HTTPException(status_code=400, detail=result.get("message"))
-            
-        return result
-    finally:
-        # Clean up temporary file
-        if temp_file_path.exists():
-            os.remove(temp_file_path)
+
 
 @router.delete("/corpus/{specification}")
 async def remove_document(specification: str):

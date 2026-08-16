@@ -46,13 +46,13 @@ def _extract_spec_number_from_filename(filename: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
-def inspect_archive(zip_path: Path, expected_spec_number: str) -> dict:
+def inspect_archive(zip_path: Path, expected_spec_number: Optional[str] = None) -> dict:
     """Inspect a 3GPP ZIP archive and identify the authoritative spec document.
     
     Strategy:
     1. List all files in the archive.
     2. Filter out auxiliary/template/readme files.
-    3. Among supported doc formats, identify the one that matches the spec number.
+    3. Among supported doc formats, identify the one that matches the spec number (if provided).
     4. Prefer PDF for extraction reliability (page numbers, section structure).
        - PDF preserves page boundaries natively.
        - DOCX has no inherent page concept — page breaks are approximate.
@@ -66,7 +66,7 @@ def inspect_archive(zip_path: Path, expected_spec_number: str) -> dict:
         - candidates: list of candidate spec documents
         - reason: why this file was selected
     """
-    expected_num_clean = expected_spec_number.replace(".", "").replace(" ", "")
+    expected_num_clean = expected_spec_number.replace(".", "").replace(" ", "") if expected_spec_number else None
 
     result = {
         "zip_path": str(zip_path),
