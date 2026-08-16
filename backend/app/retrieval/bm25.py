@@ -31,12 +31,12 @@ class BM25Store:
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
         self.bm25: Optional[BM25Okapi] = None
         self.chunk_ids: List[str] = []
+        self.tokenized_corpus: List[List[str]] = []  # Stored alongside BM25
         
         self.load_index()
 
     def tokenize(self, text: str) -> List[str]:
-        # Simple whitespace/punctuation tokenizer for BM25
-        # In a real system, might use a better telecom-aware tokenizer
+        """Simple whitespace/punctuation tokenizer for BM25."""
         import string
         text = text.lower()
         text = text.translate(str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
@@ -46,8 +46,8 @@ class BM25Store:
         """Build BM25 index from chunks and save to disk."""
         logger.info(f"Building BM25 index from {len(chunks)} chunks...")
         self.chunk_ids = [c["id"] for c in chunks]
-        tokenized_corpus = [self.tokenize(c["text"]) for c in chunks]
-        self.bm25 = BM25Okapi(tokenized_corpus)
+        self.tokenized_corpus = [self.tokenize(c["text"]) for c in chunks]
+        self.bm25 = BM25Okapi(self.tokenized_corpus)
         
         self.save_index()
         logger.info("BM25 index built successfully.")
@@ -58,7 +58,8 @@ class BM25Store:
             
         data = {
             "bm25": self.bm25,
-            "chunk_ids": self.chunk_ids
+            "chunk_ids": self.chunk_ids,
+            "tokenized_corpus": self.tokenized_corpus,
         }
         with open(self.index_path, "wb") as f:
             pickle.dump(data, f)
@@ -70,6 +71,7 @@ class BM25Store:
                     data = pickle.load(f)
                     self.bm25 = data["bm25"]
                     self.chunk_ids = data["chunk_ids"]
+                    self.tokenized_corpus = data.get("tokenized_corpus", [])
                 logger.info(f"Loaded BM25 index with {len(self.chunk_ids)} documents.")
             except Exception as e:
                 logger.error(f"Failed to load BM25 index: {e}")
@@ -82,7 +84,6 @@ class BM25Store:
             return []
             
         tokenized_query = self.tokenize(query)
-        # BM25 scores
         scores = self.bm25.get_scores(tokenized_query)
         
         # Zip with IDs and sort
@@ -107,27 +108,23 @@ class BM25Store:
             return
             
         remove_set = set(chunk_ids_to_remove)
-        # We need to rebuild BM25 from remaining documents
-        # BM25Okapi doesn't support incremental removal, so we filter and rebuild
         remaining_ids = []
         remaining_docs = []
         
-        # We need the original tokenized corpus — BM25Okapi stores it internally
-        # The safest approach is to rebuild from the corpus attribute
-        corpus = self.bm25.corpus  # BM25Okapi stores tokenized docs
-        
         for i, chunk_id in enumerate(self.chunk_ids):
-            if chunk_id not in remove_set and i < len(corpus):
+            if chunk_id not in remove_set and i < len(self.tokenized_corpus):
                 remaining_ids.append(chunk_id)
-                remaining_docs.append(corpus[i])
+                remaining_docs.append(self.tokenized_corpus[i])
                 
         if remaining_docs:
             self.chunk_ids = remaining_ids
+            self.tokenized_corpus = remaining_docs
             self.bm25 = BM25Okapi(remaining_docs)
             self.save_index()
-            logger.info(f"Removed {len(chunk_ids_to_remove)} chunks. BM25 index rebuilt with {len(remaining_ids)} documents.")
+            logger.info(f"Removed {len(chunk_ids_to_remove)} chunks. BM25 rebuilt with {len(remaining_ids)} docs.")
         else:
             self.chunk_ids = []
+            self.tokenized_corpus = []
             self.bm25 = None
             self.save_index()
             logger.info("BM25 index is now empty after removal.")
@@ -141,14 +138,14 @@ class BM25Store:
         new_tokenized = [self.tokenize(c["text"]) for c in chunks]
         
         if self.bm25 is not None and self.chunk_ids:
-            # Rebuild with combined corpus
-            existing_corpus = list(self.bm25.corpus)
-            all_corpus = existing_corpus + new_tokenized
+            all_corpus = self.tokenized_corpus + new_tokenized
             all_ids = self.chunk_ids + new_ids
             self.chunk_ids = all_ids
+            self.tokenized_corpus = all_corpus
             self.bm25 = BM25Okapi(all_corpus)
         else:
             self.chunk_ids = new_ids
+            self.tokenized_corpus = new_tokenized
             self.bm25 = BM25Okapi(new_tokenized)
             
         self.save_index()

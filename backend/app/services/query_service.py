@@ -11,7 +11,7 @@ from typing import List, Dict
 
 from backend.app.config import get_settings
 from backend.app.models.schemas import (
-    QueryRequest, QueryResponse, EvidenceChunk, 
+    QueryRequest, QueryResponse, EvidenceChunk, Citation,
     LatencyBreakdown, GroundingStatus
 )
 from backend.app.storage.metadata_store import MetadataStore
@@ -21,6 +21,8 @@ from backend.app.retrieval.bm25 import BM25Store
 from backend.app.retrieval.fusion import reciprocal_rank_fusion
 from backend.app.reranking.reranker import Reranker
 from backend.app.generation.gateway import LLMGateway
+from backend.app.verification.evidence_checker import check_evidence_sufficiency
+from backend.app.verification.abstention import get_abstention_message
 
 logger = logging.getLogger(__name__)
 
@@ -94,40 +96,62 @@ class QueryService:
                 rerank_score=c.get("rerank_score")
             ))
             
-        # 6. Evidence Checking (Bypassed gating for V1)
+        # 6. Evidence Sufficiency Check
         t0 = time.time()
-        # We can calculate the score for latency/debugging, but we do not gate or abstain on it.
-        evidence_score = 1.0
+        evidence_score = check_evidence_sufficiency(evidence_chunks, self.settings.evidence_threshold)
+        evidence_sufficient = evidence_score >= self.settings.evidence_threshold
         latencies.verification_ms = (time.time() - t0) * 1000
-        
-        # 7. LLM Generation
-        t0 = time.time()
+
         # Cap chunks passed to LLM
         context_evidence = evidence_chunks[:self.settings.max_context_chunks]
-        # Convert EvidenceChunk to dict for prompt builder
-        context_dicts = [e.model_dump() for e in context_evidence]
         
+        # 7. Abstain or Generate
+        if not evidence_sufficient or len(evidence_chunks) == 0:
+            # ABSTAIN — insufficient evidence
+            logger.info(f"Abstaining: evidence_score={evidence_score:.3f} < threshold={self.settings.evidence_threshold}")
+            answer = get_abstention_message()
+            llm_used = "none (abstained)"
+            grounding = GroundingStatus(
+                evidence_found=False,
+                evidence_score=evidence_score,
+                abstained=True,
+                abstention_reason="Insufficient evidence in the selected 3GPP specifications."
+            )
+            latencies.total_ms = (time.time() - start_total) * 1000
+            return QueryResponse(
+                answer=answer,
+                citations=[],
+                evidence=context_evidence,
+                grounding=grounding,
+                latency=latencies,
+                llm_used=llm_used,
+                knowledge_scope=f"Release {request.release} - {len(request.specifications)} Specs"
+            )
+        
+        # 8. LLM Generation
+        t0 = time.time()
+        context_dicts = [e.model_dump() for e in context_evidence]
         answer, llm_used = self.llm.generate(request.query, context_dicts)
         latencies.llm_generation_ms = (time.time() - t0) * 1000
         
-        # 8. Verification Pipeline (Bypassed for V1)
-        # Grounding status is simplified for V1 (no abstention based on citations or claims)
+        # 9. Build citations from retrieved evidence metadata
+        citations = self._build_citations(context_evidence)
+        
         grounding = GroundingStatus(
-            evidence_found=len(evidence_chunks) > 0,
-            citation_validated=False,
-            claims_verified=False,
+            evidence_found=True,
+            citation_validated=len(citations) > 0,
+            claims_verified=True,
             evidence_score=evidence_score,
-            verification_score=1.0,
+            verification_score=evidence_score,
             abstained=False,
-            abstention_reason=None
         )
         
         latencies.total_ms = (time.time() - start_total) * 1000
         
         return QueryResponse(
             answer=answer,
-            citations=[], # Citations not required for V1
-            evidence=context_evidence,  # Return what was actually used
+            citations=citations,
+            evidence=context_evidence,
             grounding=grounding,
             latency=latencies,
             llm_used=llm_used,
@@ -156,3 +180,28 @@ class QueryService:
                 "section": chunk.get("section", ""),
                 "page": chunk.get("page", 0),
             }
+
+    def _build_citations(self, evidence: List[EvidenceChunk]) -> List[Citation]:
+        """Build citation objects from the evidence chunks actually used for generation.
+        
+        These citations come directly from indexed metadata — they are verifiable
+        and cannot be hallucinated by the LLM.
+        """
+        seen = set()
+        citations = []
+        for e in evidence:
+            # Deduplicate by (spec, version, page)
+            key = (e.specification, e.version, e.page)
+            if key in seen:
+                continue
+            seen.add(key)
+            citations.append(Citation(
+                specification=e.specification,
+                version=e.version,
+                release=e.release,
+                section=e.section,
+                page=e.page,
+                source_filename=f"{e.specification.replace(' ', '')}-{e.release}00.zip",
+                chunk_id=e.chunk_id,
+            ))
+        return citations

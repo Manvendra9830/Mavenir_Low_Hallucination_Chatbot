@@ -18,11 +18,14 @@ class CorpusManager:
         stats = self.meta_store.get_document_stats()
         
         specs = []
-        total_docs = len(stats)
+        total_docs = 0
         total_chunks = 0
         total_pages = 0
         
         for s in stats:
+            # Only include successfully indexed documents in corpus status
+            if s["status"] != "indexed":
+                continue
             specs.append(SpecificationInfo(
                 specification=s["specification"],
                 title="",  # Could lookup from catalog if needed
@@ -33,6 +36,7 @@ class CorpusManager:
                 page_count=s.get("page_count", 0) or 0,
                 source_filename=s.get("source_filename", "")
             ))
+            total_docs += 1
             total_chunks += s.get("chunk_count", 0) or 0
             total_pages += s.get("page_count", 0) or 0
             

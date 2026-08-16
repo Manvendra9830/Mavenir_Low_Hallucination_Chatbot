@@ -2,6 +2,7 @@
 TeleRAG — Groq Generation Client (Fallback)
 """
 import logging
+import time
 from typing import Optional
 
 try:
@@ -36,14 +37,20 @@ class GroqClient:
             {"role": "user", "content": prompt}
         ]
         
-        try:
-            response = self.client.chat.completions.create(
-                model=self.settings.groq_model,
-                messages=messages,
-                temperature=self.settings.temperature,
-                max_tokens=self.settings.max_output_tokens,
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"Groq generation failed: {e}")
-            return None
+        # 1 retry for transient errors
+        for attempt in range(2):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.settings.groq_model,
+                    messages=messages,
+                    temperature=self.settings.temperature,
+                    max_tokens=self.settings.max_output_tokens,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                if attempt == 0:
+                    logger.warning(f"Groq transient error (retrying): {e}")
+                    time.sleep(1)
+                else:
+                    logger.error(f"Groq generation failed after retry: {e}")
+                    return None

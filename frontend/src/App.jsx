@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import './index.css'
 
-const API_BASE = 'http://localhost:8000/api'
+// In production (Render), frontend is served by the same origin as the backend.
+// In development, Vite proxies /api to localhost:8000.
+const API_BASE = '/api'
 
 const MAX_DOCUMENTS = 10
 
@@ -113,6 +115,8 @@ export default function App() {
         role: 'assistant',
         content: data.answer,
         evidence: data.evidence,
+        citations: data.citations,
+        grounding: data.grounding,
         latency: data.latency,
         llm_used: data.llm_used,
         knowledge_scope: data.knowledge_scope,
@@ -124,7 +128,7 @@ export default function App() {
     } catch (err) {
       const errorMsg = {
         role: 'assistant',
-        content: `System error: ${err.message}. Please ensure the backend is running on port 8000.`,
+        content: `System error: ${err.message}. Please ensure the backend is running.`,
       }
       setMessages(prev => [...prev, errorMsg])
     } finally {
@@ -179,8 +183,6 @@ export default function App() {
   }
 
   const handleRemoveDocument = async (specification) => {
-    // V1 Requirement: Do NOT physically delete the indexed document. 
-    // "Remove" simply removes it from the user's active document scope (unchecks it).
     setSelectedSpecs(prev => prev.filter(s => s !== specification))
   }
 
@@ -240,7 +242,7 @@ export default function App() {
                 </div>
                 <button
                   className="spec-remove-btn"
-                  title={`Remove ${spec.specification} from corpus`}
+                  title={`Remove ${spec.specification} from scope`}
                   onClick={(e) => { e.stopPropagation(); handleRemoveDocument(spec.specification) }}
                 >
                   ✕
@@ -308,10 +310,17 @@ export default function App() {
                 {msg.content.split('\n').map((line, i) => (
                   <p key={i}>{line}</p>
                 ))}
+                {msg.role === 'assistant' && msg.grounding && (
+                  <div className={`grounding-indicator ${msg.grounding.abstained ? 'abstained' : 'grounded'}`}>
+                    <span className={`status-dot ${msg.grounding.abstained ? 'error' : 'ok'}`} />
+                    {msg.grounding.abstained ? 'Abstained — Insufficient Evidence' : 'Grounded'}
+                  </div>
+                )}
                 {msg.llm_used && (
                   <div className="message-meta">
                     <span>LLM: {msg.llm_used}</span>
                     {msg.knowledge_scope && <span> · {msg.knowledge_scope}</span>}
+                    {msg.latency?.total_ms != null && <span> · {msg.latency.total_ms.toFixed(0)}ms</span>}
                   </div>
                 )}
               </div>
@@ -358,6 +367,9 @@ export default function App() {
           <button className={`evidence-tab ${evidenceTab === 'evidence' ? 'active' : ''}`} onClick={() => setEvidenceTab('evidence')}>
             Evidence
           </button>
+          <button className={`evidence-tab ${evidenceTab === 'citations' ? 'active' : ''}`} onClick={() => setEvidenceTab('citations')}>
+            Citations
+          </button>
           <button className={`evidence-tab ${evidenceTab === 'latency' ? 'active' : ''}`} onClick={() => setEvidenceTab('latency')}>
             Latency
           </button>
@@ -367,7 +379,7 @@ export default function App() {
           {!activeEvidence ? (
             <div className="empty-state">
               <EvidenceIcon />
-              <p>Submit a query to see retrieved evidence chunks and pipeline latency.</p>
+              <p>Submit a query to see retrieved evidence chunks, citations, and pipeline latency.</p>
             </div>
           ) : (
             <>
@@ -395,6 +407,27 @@ export default function App() {
                 )
               )}
 
+              {evidenceTab === 'citations' && (
+                activeEvidence.citations?.length > 0 ? (
+                  <div className="citation-list">
+                    {activeEvidence.citations.map((cit, i) => (
+                      <div className="citation-item" key={i}>
+                        <span className="citation-spec">{cit.specification}</span>
+                        <span className="citation-detail">
+                          Release {cit.release} · v{cit.version}
+                          {cit.page ? ` · Pg ${cit.page}` : ''}
+                          {cit.section ? ` · §${cit.section}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>{activeEvidence.grounding?.abstained ? 'No citations — system abstained due to insufficient evidence.' : 'No citations for this query.'}</p>
+                  </div>
+                )
+              )}
+
               {evidenceTab === 'latency' && activeEvidence.latency && (
                 <div className="latency-grid">
                   {[
@@ -414,6 +447,12 @@ export default function App() {
                     <div className="latency-item">
                       <span className="latency-label">LLM</span>
                       <span className="latency-value">{activeEvidence.llm_used}</span>
+                    </div>
+                  )}
+                  {activeEvidence.grounding && (
+                    <div className="latency-item">
+                      <span className="latency-label">Evidence Score</span>
+                      <span className="latency-value">{activeEvidence.grounding.evidence_score?.toFixed(3) || 'N/A'}</span>
                     </div>
                   )}
                 </div>
