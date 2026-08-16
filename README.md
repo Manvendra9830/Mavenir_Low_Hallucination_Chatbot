@@ -96,9 +96,7 @@ The baseline corpus targets **Release 18** and includes the following authoritat
 
 ### Dataset Download
 
-> **TODO — Replace this link before submission**
->
-> [Download the Release 18 3GPP Dataset](REPLACE_WITH_GOOGLE_DRIVE_LINK)
+> [Download the Release 18 3GPP Dataset](https://drive.google.com/drive/folders/1rCBpMn-DUdHOl1BmfYWs4hOZtBNgmYPI?usp=sharing)
 
 Please download the ZIP file containing the 3GPP specifications and extract it directly into the `data/3gpp/release_18/` directory of this repository. The exact directory structure must look like this:
 
