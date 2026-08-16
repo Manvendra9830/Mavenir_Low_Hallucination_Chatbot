@@ -1,0 +1,64 @@
+[
+  {
+    "id": "q1",
+    "question": "What are the key network functions in the 5G Core Network architecture?",
+    "category": "answerable",
+    "expected_specs": ["TS 23.501"]
+  },
+  {
+    "id": "q2",
+    "question": "Describe the registration procedure for a UE in the 5G system.",
+    "category": "answerable",
+    "expected_specs": ["TS 23.502"]
+  },
+  {
+    "id": "q3",
+    "question": "How does network slicing work in 5G?",
+    "category": "answerable",
+    "expected_specs": ["TS 23.501"]
+  },
+  {
+    "id": "q4",
+    "question": "What is the PDU session establishment procedure?",
+    "category": "answerable",
+    "expected_specs": ["TS 23.502"]
+  },
+  {
+    "id": "q5",
+    "question": "What NAS security mechanisms protect 5G signaling?",
+    "category": "answerable",
+    "expected_specs": ["TS 24.501"]
+  },
+  {
+    "id": "q6",
+    "question": "What is the maximum throughput of a 6G NR base station?",
+    "category": "unanswerable",
+    "expected_specs": [],
+    "note": "6G is not covered in Release 18 — system should abstain."
+  },
+  {
+    "id": "q7",
+    "question": "Compare the 5G architecture with the architecture of LTE.",
+    "category": "adversarial",
+    "expected_specs": [],
+    "note": "LTE architecture (TS 23.401) is NOT in our corpus — system should abstain or partially answer."
+  },
+  {
+    "id": "q8",
+    "question": "What is the role of the SMF in the 5G system architecture?",
+    "category": "answerable",
+    "expected_specs": ["TS 23.501"]
+  },
+  {
+    "id": "q9",
+    "question": "Describe the handover procedure in NR.",
+    "category": "answerable",
+    "expected_specs": ["TS 38.300", "TS 38.331"]
+  },
+  {
+    "id": "q10",
+    "question": "What policy and charging rules apply to a PDU session?",
+    "category": "answerable",
+    "expected_specs": ["TS 23.503"]
+  }
+]

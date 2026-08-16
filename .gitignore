@@ -1,0 +1,44 @@
+# Environment & Secrets
+.env
+.env.local
+.env.production
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Data & Storage (large, generated)
+data/3gpp/
+storage/
+*.pkl
+*.pickle
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-data/
+
+data/temp_uploads/
+telerag_debug.zip
