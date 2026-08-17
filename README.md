@@ -124,7 +124,7 @@ Practical limits on how many documents can be used depend on:
 ### 3GPP Release 18 Dataset
 
 Dataset download:
-[DATASET DOWNLOAD LINK — REPLACE BEFORE SUBMISSION]
+https://drive.google.com/drive/folders/1rCBpMn-DUdHOl1BmfYWs4hOZtBNgmYPI?usp=sharing
 
 The evaluator should download and extract the provided corpus into the expected directory before running `setup.py`. The exact directory structure must look like this:
 
@@ -255,7 +255,7 @@ Try these questions in the UI to evaluate the RAG pipeline:
 
 ### Demo Video
 
-[DEMO VIDEO LINK — REPLACE BEFORE SUBMISSION]
+https://drive.google.com/file/d/1ituA_DAmE8keHMiNcAVrVy_4lVwBw4EP/view?usp=sharing
 
 This demo video demonstrates:
 - A technical 3GPP question
