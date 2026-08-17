@@ -15,7 +15,7 @@ build/
 
 # Data & Storage (large, generated)
 data/3gpp/
-storage/
+/storage/
 *.pkl
 *.pickle
 
