@@ -15,11 +15,11 @@ class Settings(BaseSettings):
 
     # --- LLM: Primary (Google Gemini) ---
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
-    gemini_model: str = Field(default="gemini-2.0-flash", description="Gemini model name")
+    gemini_model: str = Field(default="gemini-3.5-flash", description="Gemini model name")
 
     # --- LLM: Fallback (Groq) ---
     groq_api_key: str = Field(default="", description="Groq API key")
-    groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", description="Groq model name")
 
     # --- Embedding ---
     embedding_model: str = Field(default="all-MiniLM-L6-v2", description="Sentence-transformers model")
