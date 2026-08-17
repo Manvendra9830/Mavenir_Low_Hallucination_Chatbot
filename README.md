@@ -29,7 +29,7 @@ It is NOT an official Mavenir internal product. It showcases a deep understandin
 
 ## Key Features
 
-- **Release-aware 3GPP corpus**: Dynamically indexes specific 3GPP specifications and versions.
+- **Controlled 3GPP corpus**: Configured for a reproducible baseline of six specific Release 18 specifications.
 - **Hybrid dense + BM25 retrieval**: Fuses `all-MiniLM-L6-v2` dense embeddings with `rank_bm25` keyword search.
 - **RRF (Reciprocal Rank Fusion)**: Robustly merges dense and sparse rankings.
 - **Cross-encoder reranking**: Uses `ms-marco-MiniLM-L-6-v2` for precise semantic candidate reordering.
@@ -80,9 +80,9 @@ graph LR
     Chunk --> BM25[(BM25 Sparse Index)]
 ```
 
-## Why Six Specifications?
+## Current Corpus Scope
 
-The initial corpus intentionally uses a controlled Release 18 baseline consisting of the following six specifications:
+The submitted version is intentionally scoped to a controlled Release 18 (Version 18.0.0) baseline consisting of the following six official 3GPP specifications:
 
 - **TS 23.501**: System Architecture for the 5G System
 - **TS 23.502**: Procedures for the 5G System
@@ -99,25 +99,22 @@ The initial corpus intentionally uses a controlled Release 18 baseline consistin
 5. It keeps local indexing and evaluation practical.
 6. It demonstrates the architecture without requiring an unnecessarily huge corpus.
 
-## Current Corpus
-
-The current demonstration corpus targets **Release 18** and is built on the 6 controlled specifications mentioned above.
+The corpus is controlled rather than an unrestricted collection of 3GPP documents. The current ingestion setup does not automatically discover and index arbitrary additional specifications. Additional specifications require explicit ingestion-pipeline/configuration support and appropriate source/version validation. The current implementation should therefore be evaluated using the six documented specifications.
 
 > The reference baseline contains approximately 13,642 chunks. The setup script will calculate and output the exact final chunk count during your local build.
 
-## Corpus Expansion
+### Future Corpus Expansion
 
-**Architectural Capability**
+Future versions can extend the corpus-management and ingestion layer to support:
+- additional Release 18 specifications
+- Release 17
+- Release 19
+- future 3GPP releases
+- larger multi-release corpora
 
-At present, the reproducible setup script is configured for the six-specification Release 18 baseline used in this submission (these are defined in `scripts/setup.py`). The underlying ingestion/indexing architecture is designed so the corpus can be expanded, but additional specifications should be added deliberately rather than mixing arbitrary revisions. 
+However, this is a planned enhancement and is NOT part of the current v0 implementation. Future expansion would require controlled changes to corpus discovery/configuration, source validation, version/release metadata handling, and indexing.
 
-Practical limits on how many documents can be used depend on:
-- source corpus size
-- disk space
-- RAM
-- embedding computation
-- vector index size
-- indexing time
+The retrieval architecture is designed around indexed retrieval rather than passing the entire corpus to the LLM. The submitted v0 evaluation uses the six-document Release 18 baseline. Larger corpora are a future scalability consideration and have not been claimed as part of the current validated setup.
 
 ## Dataset
 
