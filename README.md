@@ -15,21 +15,21 @@
 
 ---
 
-## 1. Overview
+## Project Overview
 
-TeleRAG is a production-quality Retrieval-Augmented Generation (RAG) chatbot specialized in 3GPP telecommunications standards. This is a **Technical Demonstration** built as a Graduate Engineer Trainee (GET) submission for Mavenir to showcase a deep understanding of:
+TeleRAG is a production-quality Retrieval-Augmented Generation (RAG) chatbot specialized in 3GPP telecommunications standards. The system is designed with a heavy focus on minimizing unsupported claims. It enforces **abstention** when sufficient evidence is unavailable and validates all LLM citations against retrieved chunks.
 
-- RAG architecture and information retrieval for structured standards.
-- 3GPP/telecom technical documentation workflows.
-- Advanced retrieval techniques (hybrid search, cross-encoder reranking).
-- Strict evidence grounding and hallucination control.
+## Mavenir Technical Demonstration
 
-The system is designed with a heavy focus on minimizing unsupported claims. It enforces **abstention** when sufficient evidence is unavailable and validates all LLM citations against retrieved chunks.
+This repository is provided as a technical demonstration for Mavenir's Graduate Engineer Trainee evaluation. 
 
-## 2. Key Features
+TeleRAG is a technical demonstration of an evidence-grounded RAG assistant for querying 3GPP Release 18 standards. 
+
+It is NOT an official Mavenir internal product. It showcases a deep understanding of RAG architecture, 3GPP/telecom technical documentation workflows, advanced retrieval techniques, and strict evidence grounding.
+
+## Key Features
 
 - **Release-aware 3GPP corpus**: Dynamically indexes specific 3GPP specifications and versions.
-- **Specification filtering**: Retrieve context explicitly filtered by telecom specs.
 - **Hybrid dense + BM25 retrieval**: Fuses `all-MiniLM-L6-v2` dense embeddings with `rank_bm25` keyword search.
 - **RRF (Reciprocal Rank Fusion)**: Robustly merges dense and sparse rankings.
 - **Cross-encoder reranking**: Uses `ms-marco-MiniLM-L-6-v2` for precise semantic candidate reordering.
@@ -39,7 +39,7 @@ The system is designed with a heavy focus on minimizing unsupported claims. It e
 - **Gemini generation with Groq fallback**: Ensures high availability.
 - **Local reproducible indexing**: Evaluators can instantly rebuild vector indexes offline with a single script.
 
-## 3. Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -80,27 +80,53 @@ graph LR
     Chunk --> BM25[(BM25 Sparse Index)]
 ```
 
-## 4. Corpus
+## Why Six Specifications?
 
-The baseline corpus targets **Release 18** and includes the following authoritative 3GPP Technical Specifications:
+The initial corpus intentionally uses a controlled Release 18 baseline consisting of the following six specifications:
+
 - **TS 23.501**: System Architecture for the 5G System
 - **TS 23.502**: Procedures for the 5G System
 - **TS 23.503**: Policy and Charging Control Framework
-- **TS 24.501**: Non-Access-Stratum Protocol for 5GS
-- **TS 38.300**: NR and NG-RAN Overall Description
-- **TS 38.331**: NR Radio Resource Control Protocol
+- **TS 24.501**: 5G NAS protocol
+- **TS 38.300**: NR and NG-RAN overall description
+- **TS 38.331**: NR RRC protocol specification
+
+**Rationale:**
+1. These specifications cover important 5G Core, NAS, NG-RAN and RRC concepts.
+2. They provide a useful technical breadth for a focused RAG demonstration.
+3. A controlled baseline avoids mixing historical revisions.
+4. Using one consistent Release 18 baseline makes results reproducible.
+5. It keeps local indexing and evaluation practical.
+6. It demonstrates the architecture without requiring an unnecessarily huge corpus.
+
+## Current Corpus
+
+The current demonstration corpus targets **Release 18** and is built on the 6 controlled specifications mentioned above.
 
 > The reference baseline contains approximately 13,642 chunks. The setup script will calculate and output the exact final chunk count during your local build.
 
-## 5. Dataset
+## Corpus Expansion
 
-### Dataset Download
+**Architectural Capability**
 
-> **TODO — Replace this link before submission**
->
-> [Download the Release 18 3GPP Dataset](REPLACE_WITH_GOOGLE_DRIVE_LINK)
+At present, the reproducible setup script is configured for the six-specification Release 18 baseline used in this submission (these are defined in `scripts/setup.py`). The underlying ingestion/indexing architecture is designed so the corpus can be expanded, but additional specifications should be added deliberately rather than mixing arbitrary revisions. 
 
-Please download the ZIP file containing the 3GPP specifications and extract it directly into the `data/3gpp/release_18/` directory of this repository. The exact directory structure must look like this:
+Practical limits on how many documents can be used depend on:
+- source corpus size
+- disk space
+- RAM
+- embedding computation
+- vector index size
+- indexing time
+
+## Dataset
+
+### 3GPP Release 18 Dataset
+
+Dataset download:
+[DATASET DOWNLOAD LINK — REPLACE BEFORE SUBMISSION]
+
+The evaluator should download and extract the provided corpus into the expected directory before running `setup.py`. The exact directory structure must look like this:
 
 ```
 data/
@@ -114,112 +140,80 @@ data/
       TS_38.331/
 ```
 
-## 6. System Requirements
+## Local Setup
 
-- **Python**: 3.9 - 3.12
-- **Node.js**: v18 or v20+
-- **RAM**: Minimum 8GB (16GB recommended for local embedding generation)
-- **Disk Space**: ~2GB free for dependencies, downloaded models, and vector storage
-- **Internet**: Required for frontend packages, backend pip dependencies, downloading HuggingFace models, and accessing LLM APIs.
-- **CPU/GPU**: The embedding model `all-MiniLM-L6-v2` will seamlessly run on CPU for the corpus ingestion (~3-5 mins). No GPU is required.
+The `setup.py` script automatically handles the local corpus preparation and index generation workflow. Evaluators do not need to manually create ChromaDB, BM25 indexes, SQLite tables, or embeddings.
 
-## 7. Installation
+Follow these steps for the evaluator workflow:
 
-1. Clone the repository:
+1. Clone repository
 ```bash
 git clone https://github.com/Manvendra9830/Mavenir_Low_Hallucination_Chatbot.git telerag
 cd telerag
 ```
 
-2. Setup Python backend environment:
+2. Create Python virtual environment
 ```bash
 python -m venv .venv
 # On Windows:
 .venv\Scripts\activate
 # On Mac/Linux:
 source .venv/bin/activate
+```
 
+3. Install backend dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-3. Setup React frontend:
+4. Install frontend dependencies
 ```bash
 cd frontend
 npm install
 cd ..
 ```
 
-## 8. One-Command Corpus Setup
+5. Obtain/place the required 3GPP corpus (from the dataset link).
+6. Place it under the documented data directory (`data/3gpp/release_18/`).
 
-This project uses a standalone ingestion script to recreate the entire vector and metadata databases entirely from scratch, guaranteeing reproducibility. **Antigravity is NOT required.**
+## Environment Configuration
 
-Place your downloaded dataset in `data/3gpp/release_18/` as described above, then run:
+7. Configure `.env`
 
-```bash
-python scripts/setup.py
-```
-
-**What this does:**
-1. Validates dataset presence.
-2. Extracts raw 3GPP doc text.
-3. Generates recursive text chunks.
-4. Generates local SentenceTransformer embeddings natively (no API required).
-5. Builds a persistent local ChromaDB vector database.
-6. Builds a serialized BM25 keyword index.
-7. Prints a final verification summary of your indexed specifications and chunk counts.
-
-*(If you ever need to rebuild the databases from scratch again, run `python scripts/setup.py --rebuild`)*.
-
-## 9. Environment Variables
-
-Copy the example configuration to your local `.env`:
+Copy the example configuration:
 ```bash
 cp .env.example .env
 # On Windows Command Prompt:
 copy .env.example .env
 ```
 
-Open `.env` and fill in your API keys:
-- `GEMINI_API_KEY`: Your Google GenAI key.
-- `GROQ_API_KEY`: Your Groq API key.
-*(The system automatically falls back to Groq if Gemini hits a rate limit).*
+Open `.env` and fill in your API keys (like `GEMINI_API_KEY` and `GROQ_API_KEY`).
 
-Ensure `MAX_OUTPUT_TOKENS` is correctly tuned (default is `1024`) to conserve daily Groq quotas.
+## Running the Backend
 
-## 10. Run Locally
-
-Open two separate terminals:
-
-**Terminal 1 — Backend:**
+8. Run setup script:
 ```bash
-# Make sure your virtual environment is activated
+python scripts/setup.py
+```
+*(This builds all necessary databases and indexes from the 3GPP corpus)*
+
+9. Start backend:
+```bash
 python -m uvicorn backend.app.main:app --reload --port 8000
 ```
 
-**Terminal 2 — Frontend:**
+## Running the Frontend
+
+10. Start frontend:
+Open a second terminal:
 ```bash
 cd frontend
 npm run dev
 ```
 
-You can now access the TeleRAG UI at: http://localhost:5173
+11. Open the local frontend URL at http://localhost:5173 in your browser.
 
-## 11. API Health Check
-
-Before querying the UI, you can verify your backend is actively serving the corpus.
-Visit `http://localhost:8000/api/health` in your browser.
-
-A healthy installation will respond with:
-```json
-{
-  "status": "ok",
-  "index_ready": true,
-  "corpus_specs": 6,
-  "corpus_chunks": 13642
-}
-```
-
-## 12. How RAG Works
+## RAG Pipeline
 
 1. **Dense Retrieval:** Captures the semantic intent of your telecom question using `all-MiniLM-L6-v2`.
 2. **Sparse BM25:** Matches exact acronyms and specification terminology.
@@ -229,11 +223,18 @@ A healthy installation will respond with:
 6. **LLM Generation:** The LLM is strictly instructed to answer *only* using the verified evidence.
 7. **Abstention:** If the evidence score fails the confidence threshold, the chatbot gracefully refuses to answer.
 
-## 13. Hallucination Control
+## Grounding and Abstention
 
-This system is explicitly designed to minimize unsupported claims through retrieval, evidence grounding, verification, and abstention. The model will refuse questions about 6G, proprietary hardware, or out-of-scope standards rather than guessing. 
+This system is explicitly designed to minimize unsupported claims through strict evidence grounding. The system intentionally refuses questions when sufficient evidence cannot be found in the selected corpus.
 
-## 14. Demo Questions
+Example:
+
+**Question:** "What is the maximum throughput of a 6G NR base station?"
+**Expected Response:** "I could not find sufficient evidence in the selected 3GPP standards to answer this question."
+
+Additionally, questions about proprietary Mavenir internal implementations are outside the supplied public 3GPP evidence and should therefore be rejected/abstained.
+
+## Evaluation / Demo Questions
 
 Try these questions in the UI to evaluate the RAG pipeline:
 
@@ -250,34 +251,54 @@ Try these questions in the UI to evaluate the RAG pipeline:
 6. **What is Mavenir's proprietary internal AMF implementation according to TS 23.501?**
    *(Expected: Insufficient evidence / abstention)*
 
-## 15. Screenshots
-
-## Screenshots
-
-> **TODO — Add screenshots before submission**
->
-> <!-- IMAGE 1: Main chatbot -->
->
-> <!-- IMAGE 2: Grounded answer with citations -->
->
-> <!-- IMAGE 3: Abstention example -->
->
-> <!-- IMAGE 4: Knowledge scope / corpus status -->
-
-## 16. Demo Video
-
 ## Demo Video
 
-> **TODO — Replace with final demo video link**
->
-> [Watch the TeleRAG Demo](REPLACE_WITH_VIDEO_LINK)
+### Demo Video
 
-## 17. Evaluation
+[DEMO VIDEO LINK — REPLACE BEFORE SUBMISSION]
 
-Currently, the 13,642-chunk corpus has been rigorously verified to isolate candidate context correctly for core AMF, SMF, and NAS procedures without hallucinating proprietary elements. The system successfully falls back from Gemini to Groq transparently.
+This demo video demonstrates:
+- A technical 3GPP question
+- Hybrid retrieval
+- Grounded answer
+- Evidence-backed generation
+- Abstention for unsupported/out-of-domain questions
+- Gemini primary / Groq fallback where applicable
 
-## 18. Project Structure
+## Why No Public Deployment?
 
+The project is intentionally provided for local evaluation rather than as a publicly deployed application. The backend requires LLM API credentials through environment variables. To avoid exposing or sharing the developer's personal API credentials through a public deployment, the repository is designed to be run locally using the evaluator's own API keys.
+
+- API keys are never committed to version control.
+- API keys belong exclusively in the `.env` file.
+- `.env.example` shows the required variables without exposing real keys.
+- The frontend never receives the API keys.
+- Evaluators can safely run the project locally.
+
+## Security
+
+- **.env** file contains **API credentials** and is used for the **Backend only**.
+- Never commit `.env` to version control.
+- Never place API keys in frontend code.
+- Never expose API keys in screenshots or demo videos.
+- `.env.example` contains placeholders only.
+
+## Limitations
+
+- **Release 18 Baseline Only:** The current corpus is restricted to six core specifications for predictability.
+- **Local Index Generation:** Re-embedding large libraries relies heavily on CPU speed unless GPU PyTorch is configured.
+- **LLM Rate Limits:** Free-tier Gemini and Groq API quotas heavily restrict generation concurrency.
+- **No Zero-Hallucination Guarantee:** The system is "designed to minimize unsupported claims", but absolute guarantees are mathematically impossible with stochastic LLMs.
+
+## Future Improvements
+
+- Streaming LLM output to the frontend for faster time-to-first-token.
+- Intelligent multi-hop retrieval for queries spanning NAS and RRC procedures simultaneously.
+- Asynchronous Celery workers for non-blocking document ingestion in production.
+
+## License / Notes
+
+Project structure for reference:
 ```text
 mavenir/
 ├── backend/
@@ -296,16 +317,3 @@ mavenir/
 │   └── setup.py          # One-command ingestion builder
 └── storage/              # Generated databases (ignored in Git)
 ```
-
-## 19. Limitations
-
-- **Release 18 Baseline Only:** The current corpus is restricted to six core specifications for predictability.
-- **Local Index Generation:** Re-embedding large libraries relies heavily on CPU speed unless GPU PyTorch is configured.
-- **LLM Rate Limits:** Free-tier Gemini and Groq API quotas heavily restrict generation concurrency.
-- **No Zero-Hallucination Guarantee:** The system is "designed to minimize unsupported claims", but absolute guarantees are mathematically impossible with stochastic LLMs.
-
-## 20. Future Improvements
-
-- Streaming LLM output to the frontend for faster time-to-first-token.
-- Intelligent multi-hop retrieval for queries spanning NAS and RRC procedures simultaneously.
-- Asynchronous Celery workers for non-blocking document ingestion in production.
