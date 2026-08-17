@@ -248,33 +248,17 @@ Try these questions in the UI to evaluate the RAG pipeline:
 6. **What is Mavenir's proprietary internal AMF implementation according to TS 23.501?**
    *(Expected: Insufficient evidence / abstention)*
 
-## 15. Screenshots
-
-## Screenshots
-
-> **TODO — Add screenshots before submission**
->
-> <!-- IMAGE 1: Main chatbot -->
->
-> <!-- IMAGE 2: Grounded answer with citations -->
->
-> <!-- IMAGE 3: Abstention example -->
->
-> <!-- IMAGE 4: Knowledge scope / corpus status -->
-
-## 16. Demo Video
+## 15. Demo Video
 
 ## Demo Video
 
-> **TODO — Replace with final demo video link**
->
 > [Watch the TeleRAG Demo](REPLACE_WITH_VIDEO_LINK)
 
-## 17. Evaluation
+## 16. Evaluation
 
 Currently, the 13,642-chunk corpus has been rigorously verified to isolate candidate context correctly for core AMF, SMF, and NAS procedures without hallucinating proprietary elements. The system successfully falls back from Gemini to Groq transparently.
 
-## 18. Project Structure
+## 17. Project Structure
 
 ```text
 mavenir/
@@ -295,14 +279,14 @@ mavenir/
 └── storage/              # Generated databases (ignored in Git)
 ```
 
-## 19. Limitations
+## 18. Limitations
 
 - **Release 18 Baseline Only:** The current corpus is restricted to six core specifications for predictability.
 - **Local Index Generation:** Re-embedding large libraries relies heavily on CPU speed unless GPU PyTorch is configured.
 - **LLM Rate Limits:** Free-tier Gemini and Groq API quotas heavily restrict generation concurrency.
 - **No Zero-Hallucination Guarantee:** The system is "designed to minimize unsupported claims", but absolute guarantees are mathematically impossible with stochastic LLMs.
 
-## 20. Future Improvements
+## 19. Future Improvements
 
 - Streaming LLM output to the frontend for faster time-to-first-token.
 - Intelligent multi-hop retrieval for queries spanning NAS and RRC procedures simultaneously.
